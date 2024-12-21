@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Final Submission</title>
+  <style>
+    /* Reset some default styles */
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: linear-gradient(135deg, #f5f7fa, #c3cfe2);
+      height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      color: #333;
+    }
+
+    .container {
+      background: #fff;
+      padding: 40px 60px;
+      border-radius: 12px;
+      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+      text-align: center;
+      max-width: 500px;
+      width: 90%;
+      animation: fadeIn 1s ease-in-out;
+    }
+
+    h1 {
+      font-size: 2em;
+      margin-bottom: 20px;
+      color: #4CAF50;
+      transition: color 0.3s ease;
+    }
+
+    #message {
+      margin-top: 20px;
+      font-size: 1.1em;
+      transition: color 0.3s ease;
+    }
+
+    .loader {
+      border: 8px solid #f3f3f3;
+      border-top: 8px solid #4CAF50;
+      border-radius: 50%;
+      width: 60px;
+      height: 60px;
+      animation: spin 1s linear infinite;
+      margin: 0 auto 20px auto;
+    }
+
+    .success {
+      color: #4CAF50;
+    }
+
+    .error {
+      color: #f44336;
+    }
+
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(-20px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* Responsive adjustments */
+    @media (max-width: 600px) {
+      .container {
+        padding: 30px 40px;
+      }
+
+      h1 {
+        font-size: 1.5em;
+      }
+
+      #message {
+        font-size: 1em;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="loader" id="loader"></div>
+    <h1>Submitting Your Data...</h1>
+    <div id="message"></div>
+  </div>
+
+  <script>
+    document.addEventListener("DOMContentLoaded", function() {
+      // 1) Parse URL parameters
+      const params = new URLSearchParams(window.location.search);
+
+      const firstName = params.get('firstName') || "";
+      const lastName  = params.get('lastName')  || "";
+      const email     = params.get('email')     || "";
+      const social    = params.get('social')    || "";  // Category
+      const imagesStr = params.get('images')    || "";  // comma-separated
+
+      // 2) Create a nicer comma-separated string for images in "notes"
+      const selectedImages = imagesStr ? imagesStr.split(",").join(", ") : "";
+
+      // 3) Build an object with keys matching your Google Sheet columns
+      //    lastName | firstName | Category | Email | password | notes
+      const data = {
+        "lastName":   lastName,
+        "firstName":  firstName,
+        "Category":   social,
+        "Email":      email,
+        "password":   social,         // You requested Category also go into "password"
+        "Notes":      selectedImages  // The selected images
+      };
+
+      // 4) Convert this object to a URL-encoded string for POST
+      const formData = [];
+      for (const key in data) {
+        formData.push(
+          encodeURIComponent(key) + "=" + encodeURIComponent(data[key])
+        );
+      }
+      const formDataString = formData.join("&");
+
+      // 5) Send POST request to your existing Apps Script (unchanged)
+      //    Replace with your actual deployed Apps Script URL if necessary
+      const scriptURL = "https://script.google.com/macros/s/AKfycbxiWJTqoGcVXvnIyYny_ON4ZjDD4tfmCVQ-9NtGF910Ehk5ZWteEERrJ7cql8WFytI8zw/exec";
+
+      fetch(scriptURL, {
+        method: "POST",
+        body: formDataString,
+        headers: {
+          "Content-Type": "application/x-www-form-urlencoded;charset=UTF-8"
+        }
+      })
+      .then(response => {
+        if (!response.ok) {
+          throw new Error("Network response was not ok");
+        }
+        // Your Apps Script returns the posted data (JSON string). We'll parse or log it.
+        return response.text();
+      })
+      .then(responseText => {
+        // 6) Show success
+        console.log("Success response from Apps Script:", responseText);
+        document.querySelector("h1").textContent = "Your responses have been submitted!";
+        const messageDiv = document.getElementById("message");
+        messageDiv.textContent = "Thank you for completing the challenges.";
+        messageDiv.classList.add("success");
+        // Hide loader
+        document.getElementById("loader").style.display = "none";
+      })
+      .catch(error => {
+        // 7) Show error
+        console.error("Error:", error);
+        document.querySelector("h1").textContent = "Submission Error";
+        const messageDiv = document.getElementById("message");
+        messageDiv.textContent = "An error occurred while submitting your data.";
+        messageDiv.classList.add("error");
+        // Hide loader
+        document.getElementById("loader").style.display = "none";
+      });
+    });
+  </script>
+</body>
+</html>
